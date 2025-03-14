@@ -1,0 +1,41 @@
+function scanWebsiteForOutOfStockItems() {
+  const urls = ['https://yourwebsite.com/page1', 'https://yourwebsite.com/page2']; // Add all the URLs you need to scan
+  const outOfStockItems = [];
+
+  // Iterate through each URL and fetch the HTML content
+  urls.forEach(url => {
+    const response = UrlFetchApp.fetch(url);
+    const html = response.getContentText();
+    
+    // Parse the HTML content
+    const $ = Cheerio.load(html);
+    
+    // Assuming out-of-stock items are marked with a specific class, e.g., 'out-of-stock'
+    $('.out-of-stock').each((index, element) => {
+      const itemName = $(element).find('.item-name').text().trim(); // Adjust selector as needed
+      outOfStockItems.push([itemName, url]);
+    });
+  });
+
+  // Open the target Google Sheet
+  const sheet = SpreadsheetApp.openById('YOUR_SHEET_ID').getSheetByName('OutOfStock');
+
+  // Clear the sheet before adding new data
+  sheet.clear();
+
+  // Add headers to the sheet
+  sheet.appendRow(['Item', 'Page URL']);
+
+  // Append out-of-stock items to the sheet
+  outOfStockItems.forEach(item => {
+    sheet.appendRow(item);
+  });
+}
+
+// Set a time-based trigger to run this function hourly
+function createHourlyTrigger() {
+  ScriptApp.newTrigger('scanWebsiteForOutOfStockItems')
+    .timeBased()
+    .everyHours(1)
+    .create();
+} 
